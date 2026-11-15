@@ -1,0 +1,29 @@
+# ── Rust ──────────────────────────────────────────
+# No leading slash, so it matches at any depth (backend/target/)
+target/
+# Leftover files from rustfmt
+**/*.rs.bk
+
+# ── SvelteKit / Node (frontend, later) ────────────
+node_modules/
+.svelte-kit/
+# Output of `npm run build`
+build/
+
+# ── Secrets / environment ─────────────────────────
+.env
+# Also ignore .env.local, .env.test, etc.
+.env.*
+# ...but DO commit the template, so others know which vars exist
+!.env.example
+
+# ── Editors / OS ──────────────────────────────────
+.idea/
+.vscode/*
+# Shared VS Code recommendations are worth committing
+!.vscode/extensions.json
+.DS_Store
+Thumbs.db
+
+# ── Logs ──────────────────────────────────────────
+*.log
