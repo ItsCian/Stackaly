@@ -39,3 +39,9 @@ impl IntoResponse for AppError {
         (status, Json(body)).into_response()
     }
 }
+
+impl From<sea_orm::DbErr> for AppError {
+    fn from(err: sea_orm::DbErr) -> Self {
+        AppError::Internal(err.to_string())
+    }
+}
