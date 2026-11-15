@@ -22,6 +22,7 @@ build/
 .vscode/*
 # Shared VS Code recommendations are worth committing
 !.vscode/extensions.json
+!.vscode/settings.json
 .DS_Store
 Thumbs.db
 

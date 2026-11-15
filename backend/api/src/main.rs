@@ -18,7 +18,5 @@ async fn main() {
     // 4. Serve application
     let app = api::build_app();
 
-    axum::serve(listener, app)
-        .await
-        .expect("Server failed");
+    axum::serve(listener, app).await.expect("Server failed");
 }

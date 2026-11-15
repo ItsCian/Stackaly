@@ -1,0 +1,6 @@
+{
+  "recommendations": [
+    "rust-lang.rust-analyzer",  // Rust language support, format, clippy
+    "tamasfe.even-better-toml"  // Syntax and validation for Cargo.toml
+  ]
+}
