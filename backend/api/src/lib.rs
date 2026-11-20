@@ -1,6 +1,7 @@
 pub mod config;
 pub mod entities;
 pub mod errors;
+pub mod platform;
 pub mod state;
 
 use axum::{Json, Router, extract::State, routing::get};
@@ -23,5 +24,9 @@ async fn not_found() -> AppError {
 }
 
 pub fn build_app(state: AppState) -> Router {
-    Router::new().route("/health", get(health)).fallback(not_found).with_state(state)
+    Router::new()
+        .route("/health", get(health))
+        .fallback(not_found)
+        .merge(platform::router())
+        .with_state(state)
 }
