@@ -3,7 +3,7 @@
 use axum::{Json, extract::State, http::StatusCode};
 use uuid::Uuid;
 
-use super::dto::CreateCompany;
+use super::dto::{CreateCompany, UpdateCompany};
 use super::service;
 use crate::entities::companies;
 use crate::errors::AppError;
@@ -22,9 +22,9 @@ pub async fn create(
 
 /// GET /companies
 pub async fn list(State(state): State<AppState>) -> Result<Json<Vec<companies::Model>>, AppError> {
-    let companies = service::list(&state.db).await?;
+    let company = service::list(&state.db).await?;
 
-    Ok(Json(companies))
+    Ok(Json(company))
 }
 
 /// GET /companies/{id}
@@ -35,4 +35,25 @@ pub async fn get_by_id(
     let company = service::get_by_id(&state.db, id).await?;
 
     Ok(Json(company))
+}
+
+/// PATCH /companies/{id}
+pub async fn update(
+    State(state): State<AppState>,
+    AppPath(id): AppPath<Uuid>,
+    AppJson(input): AppJson<UpdateCompany>,
+) -> Result<Json<companies::Model>, AppError> {
+    let company = service::update(&state.db, id, input).await?;
+
+    Ok(Json(company))
+}
+
+/// DELETE /companies/{id}
+pub async fn delete(
+    State(state): State<AppState>,
+    AppPath(id): AppPath<Uuid>,
+) -> Result<StatusCode, AppError> {
+    service::delete(&state.db, id).await?;
+
+    Ok(StatusCode::NO_CONTENT)
 }

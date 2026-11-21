@@ -5,6 +5,7 @@ edition = "2024"
 
 [dependencies]
 axum = { version = "0.8.9", features = ["macros"] }
+chrono = "0.4.45"
 dotenvy = "0.15.7"
 sea-orm = { version = "2.0.4", features = ["sqlx-postgres", "runtime-tokio-rustls", "macros", "with-uuid", "with-chrono"] }
 serde = { version = "1.0.229", features = ["derive"] }
