@@ -41,3 +41,9 @@ check:
 fix:
     cd backend && cargo fmt
     cd backend && cargo clippy --fix --allow-dirty --allow-staged
+
+# Tests commands
+test:
+    docker compose up -d --wait db-test
+    cd backend && sea-orm-cli migrate up -u $TEST_DATABASE_URL
+    cd backend && cargo test -p api
