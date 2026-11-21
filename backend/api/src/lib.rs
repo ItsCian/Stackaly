@@ -1,6 +1,7 @@
 pub mod config;
 pub mod entities;
 pub mod errors;
+pub mod extract;
 pub mod platform;
 pub mod state;
 

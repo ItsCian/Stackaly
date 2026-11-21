@@ -4,11 +4,16 @@ mod dto; // request/response structs
 mod handlers; // HTTP layer
 mod service; // business logic + DB
 
-use axum::{Router, routing::post};
+use axum::{
+    Router,
+    routing::{get, post},
+};
 
 use crate::state::AppState;
 
 /// Routes mounted under /companies by platform::router().
 pub fn router() -> Router<AppState> {
-    Router::new().route("/", post(handlers::create))
+    Router::new()
+        .route("/", post(handlers::create).get(handlers::list))
+        .route("/{id}", get(handlers::get_by_id))
 }

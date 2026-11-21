@@ -1,9 +1,10 @@
 use axum::{
     Json,
+    extract::rejection::{JsonRejection, PathRejection},
     http::StatusCode,
     response::{IntoResponse, Response},
 };
-use sea_orm::{DbErr, SqlErr}; // NEW
+use sea_orm::{DbErr, SqlErr};
 use serde_json::json;
 
 #[derive(Debug, thiserror::Error)]
@@ -11,12 +12,20 @@ pub enum AppError {
     #[error("Resource not found")]
     NotFound,
 
+    // Our own business checks (e.g. a VAT number in the wrong format).
     #[error("{0}")]
     Validation(String),
 
+    // The request conflicts with existing data (e.g. duplicate VAT number).
     #[error("{0}")]
     Conflict(String),
 
+    // Axum rejected the request before our handler ran (bad JSON, bad path…).
+    // We keep Axum's status code (400, 415, 422…) and only change the format.
+    #[error("{message}")]
+    InvalidRequest { status: StatusCode, message: String },
+
+    // Something broke on our side. The detail is logged, never sent.
     #[error("Internal server error")]
     Internal(String),
 }
@@ -29,6 +38,10 @@ impl IntoResponse for AppError {
             AppError::Validation(_) => (StatusCode::BAD_REQUEST, "validation_error"),
 
             AppError::Conflict(_) => (StatusCode::CONFLICT, "conflict"),
+
+            // `status` is a &StatusCode here (we match on &self),
+            // so * copies the value out. StatusCode is Copy, so this is free.
+            AppError::InvalidRequest { status, .. } => (*status, "invalid_request"),
 
             AppError::Internal(detail) => {
                 tracing::error!(detail = %detail, "internal server error");
@@ -46,17 +59,32 @@ impl IntoResponse for AppError {
     }
 }
 
-// Converts any SeaORM error into an AppError, so `?` works on DB calls.
+// Database errors → AppError, so `?` works on SeaORM calls.
 impl From<DbErr> for AppError {
     fn from(err: DbErr) -> Self {
         match err.sql_err() {
-            // NEW: safety net. Any UNIQUE violation a service didn't handle itself
-            // becomes a 409 with a generic message instead of a 500.
+            // Safety net: a UNIQUE violation a service didn't handle → 409, not 500.
             Some(SqlErr::UniqueConstraintViolation(_)) => {
                 AppError::Conflict("This resource already exists".into())
             }
-            // Everything else: logged in detail, generic 500 for the client.
             _ => AppError::Internal(err.to_string()),
         }
+    }
+}
+
+// Invalid JSON body → AppError (used by the AppJson extractor).
+impl From<JsonRejection> for AppError {
+    fn from(rejection: JsonRejection) -> Self {
+        AppError::InvalidRequest {
+            status: rejection.status(),     // the status Axum chose: 400, 415 or 422
+            message: rejection.body_text(), // Axum's explanation, e.g. "missing field `city`"
+        }
+    }
+}
+
+// Invalid path parameter → AppError (used by the AppPath extractor).
+impl From<PathRejection> for AppError {
+    fn from(rejection: PathRejection) -> Self {
+        AppError::InvalidRequest { status: rejection.status(), message: rejection.body_text() }
     }
 }
