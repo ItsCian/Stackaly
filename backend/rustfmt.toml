@@ -1,0 +1,6 @@
+edition = "2024"
+max_width = 100                 # max line length before rustfmt wraps (100 is the default)
+use_small_heuristics = "Max"    # use the full width before breaking calls/structs onto multiple lines
+newline_style = "Unix"          # \n line endings, even on Windows
+use_field_init_shorthand = true # `Foo { x: x }` → `Foo { x }`
+use_try_shorthand = true        # old `try!(x)` → `x?`

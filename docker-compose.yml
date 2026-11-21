@@ -1,0 +1,41 @@
+services:
+  db:
+    image: postgres:18
+    environment:
+      # Values come from .env (Compose reads it automatically from this folder)
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      # ${VAR:-default}: uses 5432 if POSTGRES_PORT isn't set
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      # Postgres 18+: mount the parent folder, NOT .../data.
+      # The image stores data in a version-specific subfolder (e.g. 18/docker),
+      # which makes future major upgrades easier.
+      - stackaly_db_data:/var/lib/postgresql
+    healthcheck:
+      # Lets Docker (and CI later) know when Postgres is actually ready
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  db-test:
+    image: postgres:18
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: stackaly_test
+    ports:
+      - "${POSTGRES_TEST_PORT:-5433}:5432" # 5433 côté machine : 5432 est déjà pris par db
+    tmpfs:
+      - /var/lib/postgresql # données en mémoire : effacées à chaque arrêt
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d stackaly_test"]
+      interval: 2s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  stackaly_db_data:
