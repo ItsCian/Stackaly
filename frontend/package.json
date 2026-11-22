@@ -5,10 +5,11 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "paraglide-js compile --project ./project.inlang --outdir ./src/paraglide && tsc -b && vite build",
     "preview": "vite preview",
     "lint": "biome check .",
-    "format": "biome check --write ."
+    "format": "biome check --write .",
+    "check:i18n": "inlang check --project ./project.inlang"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",
@@ -37,6 +38,8 @@
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.1.2",
     "typescript": "~6.0.3",
-    "vite": "^8.3.6"
+    "vite": "^8.3.6",
+    "@inlang/paraglide-js": "^3.2.2",
+    "@inlang/cli": "^3.4.0"
   }
 }

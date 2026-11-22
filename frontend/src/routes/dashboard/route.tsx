@@ -1,5 +1,6 @@
 import { createFileRoute, Outlet } from '@tanstack/react-router';
 import { AppSidebar } from '@/components/app-sidebar';
+import { LanguageSwitcher } from '@/components/language-switcher';
 import { Separator } from '@/components/ui/separator';
 import {
   SidebarInset,
@@ -33,6 +34,9 @@ function DashboardLayout() {
             className="mr-2 data-[orientation=vertical]:h-4"
           />
           <span className="font-medium">Tableau de bord</span>
+          <div className="ml-auto">
+            <LanguageSwitcher />
+          </div>
         </header>
 
         {/* The current page (e.g. dashboard/index.tsx) renders here */}

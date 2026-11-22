@@ -17,6 +17,7 @@ coverage/
 # NOTE: do NOT ignore bun.lock (it pins exact versions)
 # or src/routeTree.gen.ts (TanStack recommends committing it so
 # type-checking works on a fresh clone without running Vite first)
+frontend/src/paraglide/
 
 # ── Secrets / environment ─────────────────────────
 .env

@@ -7,6 +7,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+import { m } from '@/paraglide/messages';
 
 export const Route = createFileRoute('/dashboard/')({
   component: DashboardPage,
@@ -25,7 +26,9 @@ function DashboardPage() {
   return (
     <>
       <div>
-        <h1 className="text-2xl font-bold md:text-3xl">Bonjour 👋</h1>
+        <h1 className="text-2xl font-bold md:text-3xl">
+          {m.dashboard_greeting({ name: 'Cian' })}
+        </h1>
         <p className="text-muted-foreground">
           Voici où en est la réconciliation d'aujourd'hui.
         </p>

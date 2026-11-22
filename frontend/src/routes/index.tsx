@@ -110,16 +110,16 @@ function HomePage() {
 
             {/* 1 column on phones, 2 on tablets, 4 on desktop */}
             <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              {modules.map((module) => (
-                <Card key={module.title}>
+              {modules.map((items) => (
+                <Card key={items.title}>
                   <CardHeader>
                     <div className="flex items-center justify-between">
                       <HugeiconsIcon
-                        icon={module.icon}
+                        icon={items.icon}
                         className="size-6 text-primary"
                       />
                       {/* Status badge: success colours from the Figma tokens */}
-                      {module.available ? (
+                      {items.available ? (
                         <Badge className="bg-success-subtle text-success-text">
                           Disponible
                         </Badge>
@@ -127,8 +127,8 @@ function HomePage() {
                         <Badge variant="outline">Bientôt</Badge>
                       )}
                     </div>
-                    <CardTitle className="mt-4">{module.title}</CardTitle>
-                    <CardDescription>{module.description}</CardDescription>
+                    <CardTitle className="mt-4">{items.title}</CardTitle>
+                    <CardDescription>{items.description}</CardDescription>
                   </CardHeader>
                 </Card>
               ))}
