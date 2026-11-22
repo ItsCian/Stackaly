@@ -65,7 +65,7 @@ async fn body_json(response: Response) -> Value {
 
 /// Creates a company and returns it as JSON.
 async fn create_company(app: &Router) -> Value {
-    let response = send(app, "POST", "/companies", Some(company_body(&unique_vat()))).await;
+    let response = send(app, "POST", "/api/companies", Some(company_body(&unique_vat()))).await;
     assert_eq!(response.status(), StatusCode::CREATED);
     body_json(response).await
 }
@@ -77,7 +77,7 @@ async fn create_then_get_company() {
     let app = app().await;
     let vat = unique_vat();
 
-    let response = send(&app, "POST", "/companies", Some(company_body(&vat))).await;
+    let response = send(&app, "POST", "/api/companies", Some(company_body(&vat))).await;
     assert_eq!(response.status(), StatusCode::CREATED);
 
     let created = body_json(response).await;
@@ -85,7 +85,7 @@ async fn create_then_get_company() {
     assert!(created["suspended_at"].is_null());
 
     let id = created["id"].as_str().unwrap();
-    let response = send(&app, "GET", &format!("/companies/{id}"), None).await;
+    let response = send(&app, "GET", &format!("/api/companies/{id}"), None).await;
     assert_eq!(response.status(), StatusCode::OK);
     assert_eq!(body_json(response).await, created);
 }
@@ -95,10 +95,10 @@ async fn create_with_duplicate_vat_returns_conflict() {
     let app = app().await;
     let vat = unique_vat();
 
-    let first = send(&app, "POST", "/companies", Some(company_body(&vat))).await;
+    let first = send(&app, "POST", "/api/companies", Some(company_body(&vat))).await;
     assert_eq!(first.status(), StatusCode::CREATED);
 
-    let second = send(&app, "POST", "/companies", Some(company_body(&vat))).await;
+    let second = send(&app, "POST", "/api/companies", Some(company_body(&vat))).await;
     assert_eq!(second.status(), StatusCode::CONFLICT);
     assert_eq!(body_json(second).await["code"], "conflict");
 }
@@ -109,7 +109,7 @@ async fn create_with_missing_field_returns_invalid_request() {
     let mut body = company_body(&unique_vat());
     body.as_object_mut().unwrap().remove("city");
 
-    let response = send(&app, "POST", "/companies", Some(body)).await;
+    let response = send(&app, "POST", "/api/companies", Some(body)).await;
     assert_eq!(response.status(), StatusCode::UNPROCESSABLE_ENTITY);
     assert_eq!(body_json(response).await["code"], "invalid_request");
 }
@@ -119,7 +119,7 @@ async fn create_with_broken_json_returns_invalid_request() {
     let app = app().await;
     let request = Request::builder()
         .method("POST")
-        .uri("/companies")
+        .uri("/api/companies")
         .header("content-type", "application/json")
         .body(Body::from(r#"{"legal_name": "Broken""#)) // no closing brace
         .unwrap();
@@ -136,7 +136,7 @@ async fn list_contains_created_company() {
     let app = app().await;
     let created = create_company(&app).await;
 
-    let response = send(&app, "GET", "/companies", None).await;
+    let response = send(&app, "GET", "/api/companies", None).await;
     assert_eq!(response.status(), StatusCode::OK);
 
     // Other tests create companies in parallel: check ours is there, not the count.
@@ -149,7 +149,7 @@ async fn list_contains_created_company() {
 async fn get_unknown_id_returns_not_found() {
     let app = app().await;
 
-    let response = send(&app, "GET", &format!("/companies/{}", Uuid::now_v7()), None).await;
+    let response = send(&app, "GET", &format!("/api/companies/{}", Uuid::now_v7()), None).await;
     assert_eq!(response.status(), StatusCode::NOT_FOUND);
     assert_eq!(body_json(response).await["code"], "not_found");
 }
@@ -158,7 +158,7 @@ async fn get_unknown_id_returns_not_found() {
 async fn get_invalid_id_returns_invalid_request() {
     let app = app().await;
 
-    let response = send(&app, "GET", "/companies/abc", None).await;
+    let response = send(&app, "GET", "/api/companies/abc", None).await;
     assert_eq!(response.status(), StatusCode::BAD_REQUEST);
     assert_eq!(body_json(response).await["code"], "invalid_request");
 }
@@ -174,7 +174,7 @@ async fn update_changes_only_sent_fields() {
     let response = send(
         &app,
         "PATCH",
-        &format!("/companies/{id}"),
+        &format!("/api/companies/{id}"),
         Some(json!({ "city": "Namur", "postal_code": "5000" })),
     )
     .await;
@@ -202,7 +202,7 @@ async fn update_with_duplicate_vat_returns_conflict() {
     let response = send(
         &app,
         "PATCH",
-        &format!("/companies/{id}"),
+        &format!("/api/companies/{id}"),
         Some(json!({ "vat_number": first["vat_number"] })),
     )
     .await;
@@ -217,7 +217,7 @@ async fn update_unknown_id_returns_not_found() {
     let response = send(
         &app,
         "PATCH",
-        &format!("/companies/{}", Uuid::now_v7()),
+        &format!("/api/companies/{}", Uuid::now_v7()),
         Some(json!({ "city": "Namur" })),
     )
     .await;
@@ -230,7 +230,7 @@ async fn update_unknown_id_returns_not_found() {
 async fn delete_removes_company() {
     let app = app().await;
     let created = create_company(&app).await;
-    let uri = format!("/companies/{}", created["id"].as_str().unwrap());
+    let uri = format!("/api/companies/{}", created["id"].as_str().unwrap());
 
     let response = send(&app, "DELETE", &uri, None).await;
     assert_eq!(response.status(), StatusCode::NO_CONTENT);
@@ -244,7 +244,7 @@ async fn delete_removes_company() {
 async fn delete_twice_returns_not_found() {
     let app = app().await;
     let created = create_company(&app).await;
-    let uri = format!("/companies/{}", created["id"].as_str().unwrap());
+    let uri = format!("/api/companies/{}", created["id"].as_str().unwrap());
 
     send(&app, "DELETE", &uri, None).await;
     let response = send(&app, "DELETE", &uri, None).await;
@@ -257,7 +257,7 @@ async fn delete_twice_returns_not_found() {
 async fn unknown_route_returns_not_found_json() {
     let app = app().await;
 
-    let response = send(&app, "GET", "/nope", None).await;
+    let response = send(&app, "GET", "/api/nope", None).await;
     assert_eq!(response.status(), StatusCode::NOT_FOUND);
     assert_eq!(body_json(response).await["code"], "not_found");
 }
