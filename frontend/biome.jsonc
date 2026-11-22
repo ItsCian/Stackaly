@@ -1,6 +1,7 @@
 {
   // Keep the $schema line that `biome init` generated: it gives
   // VS Code autocomplete matched to your installed version
+  "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
   "files": {
     // "**" = everything, "!" = exclude
     "includes": ["**", "!dist", "!src/routeTree.gen.ts"]
@@ -19,6 +20,11 @@
   "javascript": {
     "formatter": {
       "quoteStyle": "single" // matches the Vite template; default is double
+    }
+  },
+  "css": {
+    "parser": {
+      "tailwindDirectives": true
     }
   },
   "assist": {

@@ -21,11 +21,14 @@
   ],
   // Biome
   "biome.lsp.bin": "./frontend/node_modules/@biomejs/cli-darwin-arm64/biome",
+  "biome.configurationPath": "./frontend/biome.jsonc",
   "[typescript][typescriptreact][javascript][json][jsonc]": {
     "editor.defaultFormatter": "biomejs.biome"
   },
   "editor.codeActionsOnSave": {
-    "source.organizeImports.biome": "explicit",
-    "quickfix.biome": "explicit"
-  }
+    "source.fixAll.biome": "explicit"
+  },
+  "[typescript][typescriptreact][javascript][json][jsonc][css]": {
+    "editor.defaultFormatter": "biomejs.biome"
+  },
 }

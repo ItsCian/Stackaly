@@ -1,4 +1,4 @@
-// biome-ignore-all lint: generated file
+/* eslint-disable */
 
 // @ts-nocheck
 
@@ -8,70 +8,70 @@
 // You should NOT make any changes in this file as it will be overwritten.
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
-import { Route as rootRouteImport } from "./routes/__root";
-import { Route as CompaniesRouteImport } from "./routes/companies";
-import { Route as IndexRouteImport } from "./routes/index";
+import { Route as rootRouteImport } from './routes/__root'
+import { Route as IndexRouteImport } from './routes/index'
+import { Route as CompaniesRouteImport } from './routes/companies'
 
 const IndexRoute = IndexRouteImport.update({
-	id: "/",
-	path: "/",
-	getParentRoute: () => rootRouteImport,
-} as any);
+  id: '/',
+  path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CompaniesRoute = CompaniesRouteImport.update({
-	id: "/companies",
-	path: "/companies",
-	getParentRoute: () => rootRouteImport,
-} as any);
+  id: '/companies',
+  path: '/companies',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
-	"/": typeof IndexRoute;
-	"/companies": typeof CompaniesRoute;
+  '/': typeof IndexRoute
+  '/companies': typeof CompaniesRoute
 }
 export interface FileRoutesByTo {
-	"/": typeof IndexRoute;
-	"/companies": typeof CompaniesRoute;
+  '/': typeof IndexRoute
+  '/companies': typeof CompaniesRoute
 }
 export interface FileRoutesById {
-	__root__: typeof rootRouteImport;
-	"/": typeof IndexRoute;
-	"/companies": typeof CompaniesRoute;
+  __root__: typeof rootRouteImport
+  '/': typeof IndexRoute
+  '/companies': typeof CompaniesRoute
 }
 export interface FileRouteTypes {
-	fileRoutesByFullPath: FileRoutesByFullPath;
-	fullPaths: "/" | "/companies";
-	fileRoutesByTo: FileRoutesByTo;
-	to: "/" | "/companies";
-	id: "__root__" | "/" | "/companies";
-	fileRoutesById: FileRoutesById;
+  fileRoutesByFullPath: FileRoutesByFullPath
+  fullPaths: '/' | '/companies'
+  fileRoutesByTo: FileRoutesByTo
+  to: '/' | '/companies'
+  id: '__root__' | '/' | '/companies'
+  fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-	IndexRoute: typeof IndexRoute;
-	CompaniesRoute: typeof CompaniesRoute;
+  IndexRoute: typeof IndexRoute
+  CompaniesRoute: typeof CompaniesRoute
 }
 
-declare module "@tanstack/react-router" {
-	interface FileRoutesByPath {
-		"/": {
-			id: "/";
-			path: "/";
-			fullPath: "/";
-			preLoaderRoute: typeof IndexRouteImport;
-			parentRoute: typeof rootRouteImport;
-		};
-		"/companies": {
-			id: "/companies";
-			path: "/companies";
-			fullPath: "/companies";
-			preLoaderRoute: typeof CompaniesRouteImport;
-			parentRoute: typeof rootRouteImport;
-		};
-	}
+declare module '@tanstack/react-router' {
+  interface FileRoutesByPath {
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/companies': {
+      id: '/companies'
+      path: '/companies'
+      fullPath: '/companies'
+      preLoaderRoute: typeof CompaniesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+  }
 }
 
 const rootRouteChildren: RootRouteChildren = {
-	IndexRoute: IndexRoute,
-	CompaniesRoute: CompaniesRoute,
-};
+  IndexRoute: IndexRoute,
+  CompaniesRoute: CompaniesRoute,
+}
 export const routeTree = rootRouteImport
-	._addFileChildren(rootRouteChildren)
-	._addFileTypes<FileRouteTypes>();
+  ._addFileChildren(rootRouteChildren)
+  ._addFileTypes<FileRouteTypes>()
