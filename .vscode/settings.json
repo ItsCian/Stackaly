@@ -22,6 +22,7 @@
   // Biome
   "biome.lsp.bin": "./frontend/node_modules/@biomejs/cli-darwin-arm64/biome",
   "biome.configurationPath": "./frontend/biome.jsonc",
+  "css.validate": false,
   "[typescript][typescriptreact][javascript][json][jsonc]": {
     "editor.defaultFormatter": "biomejs.biome"
   },
