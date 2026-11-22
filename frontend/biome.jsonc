@@ -1,0 +1,32 @@
+{
+  // Keep the $schema line that `biome init` generated: it gives
+  // VS Code autocomplete matched to your installed version
+  "files": {
+    // "**" = everything, "!" = exclude
+    "includes": ["**", "!dist", "!src/routeTree.gen.ts"]
+  },
+  "formatter": {
+    "enabled": true,
+    "indentStyle": "space", // Biome defaults to tabs; pick one and stick to it
+    "indentWidth": 2
+  },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "preset": "recommended"
+    }
+  },
+  "javascript": {
+    "formatter": {
+      "quoteStyle": "single" // matches the Vite template; default is double
+    }
+  },
+  "assist": {
+    // Sorts imports: replaces what ESLint/Prettier plugins used to do
+    "actions": {
+      "source": {
+        "organizeImports": "on"
+      }
+    }
+  }
+}

@@ -4,11 +4,19 @@ target/
 # Leftover files from rustfmt
 **/*.rs.bk
 
-# ── SvelteKit / Node (frontend, later) ────────────
+# ── Front end (React + Vite + Bun) ────────────────
 node_modules/
-.svelte-kit/
-# Output of `npm run build`
-build/
+# Output of `bun run build` (Vite writes to dist/, not build/)
+dist/
+# Vite's convention for local-only files (e.g. vite.config.local.ts)
+*.local
+# Temp files from the TanStack Router generator
+.tanstack/
+# Test coverage reports, once you add tests
+coverage/
+# NOTE: do NOT ignore bun.lock (it pins exact versions)
+# or src/routeTree.gen.ts (TanStack recommends committing it so
+# type-checking works on a fresh clone without running Vite first)
 
 # ── Secrets / environment ─────────────────────────
 .env
