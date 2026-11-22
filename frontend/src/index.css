@@ -13,7 +13,7 @@
  * --color-primary → bg-primary, text-primary, border-primary…
  * "inline" = the class references var(--primary) directly, so the
  * value switches automatically between :root (light) and .dark.
-*/
+ */
 @theme inline {
   /* ── Fonts ─────────────────────────────────────── */
   --font-heading: "Bricolage Grotesque Variable", sans-serif;
@@ -68,15 +68,18 @@
   --color-error-subtle: var(--error-subtle);
   --color-error-text: var(--error-text);
 
-  /* ── Radius: fixed Figma values ────────────────── */
-  /* shadcn computes these from --radius (× 0.6, 0.8…), but the
-     Figma scale isn't proportional, so we set each step directly */
-  --radius-sm: 6px;
-  --radius-md: 12px;
-  --radius-lg: 20px;
-  --radius-xl: 32px;
-  /* Not in Figma: kept as shadcn fallbacks, derived from --radius */
-  --radius-2xl: calc(var(--radius) * 1.8);
+  /* ── Radius: Figma values, shifted one step ────── */
+  /* shadcn picks its classes for a small default scale (cards use
+     rounded-xl, buttons/inputs rounded-lg or md). Mapping the Figma
+     values one step up keeps nested corners consistent:
+     card 20px > button 12px inside it.
+     Rule of thumb: inner radius ≈ outer radius − padding */
+  --radius-sm: 6px; /* Figma radius/sm: badges, small controls */
+  --radius-md: 8px; /* between Figma steps: inputs, menu items */
+  --radius-lg: 12px; /* Figma radius/md: buttons */
+  --radius-xl: 20px; /* Figma radius/lg: cards, dialogs */
+  --radius-2xl: 32px; /* Figma radius/xl: large surfaces, hero blocks */
+  /* Not in Figma: shadcn fallbacks, derived from --radius */
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
 
@@ -99,7 +102,7 @@
 
 /* ── Light mode (Figma "Light") ───────────────────── */
 :root {
-  --radius: 20px; /* = Figma radius/lg */
+  --radius: 12px; /* base radius = --radius-lg (buttons) */
 
   --background: #ffffff; /* bg/page */
   --foreground: #111111; /* text/primary */

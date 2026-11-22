@@ -4,7 +4,11 @@
   "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
   "files": {
     // "**" = everything, "!" = exclude
-    "includes": ["**", "!dist", "!src/routeTree.gen.ts"]
+    "includes": [
+      "**",
+      "!dist",
+      "!src/routeTree.gen.ts"
+    ]
   },
   "formatter": {
     "enabled": true,
@@ -34,5 +38,18 @@
         "organizeImports": "on"
       }
     }
-  }
+  },
+  "overrides": [
+    {
+      // shadcn's vendored components: the CLI can overwrite them, so
+      // fixing their lint errors by hand would be lost on the next update.
+      // Still formatted, just not linted.
+      "includes": [
+        "src/components/ui/**"
+      ],
+      "linter": {
+        "enabled": false
+      }
+    }
+  ]
 }
