@@ -60,7 +60,7 @@ web-build:
 # Format + lint + type-check, same as CI will run
 check:
     cd backend && cargo fmt --check
-    cd backend && cargo clippy -- -D warnings
+    cd backend && cargo clippy --workspace --all-targets --locked -- -D warnings
     cd frontend && bunx biome ci .
     cd frontend && bunx tsc -b
 

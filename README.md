@@ -11,7 +11,7 @@ trattoria, each using a different checkout system.
 
 > Final-year project (TFE), EPHEC Louvain-la-Neuve, 2026–2027.
 
-<!-- TODO (STA-41): add the CI status badge here once the workflow exists -->
+[![CI](https://github.com/ItsCian/Stackaly/actions/workflows/ci.yml/badge.svg)](https://github.com/ItsCian/Stackaly/actions/workflows/ci.yml)
 
 ## Tech stack
 
