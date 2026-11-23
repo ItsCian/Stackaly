@@ -1,0 +1,15 @@
+{
+  // Same settings as the app (strict mode, @/ alias, DOM types…)
+  "extends": "./tsconfig.app.json",
+  "compilerOptions": {
+    // Bun's types (bun:test, mock…) only for test files,
+    // so browser code can't accidentally use Bun APIs
+    "types": ["bun"],
+    // Separate build cache, otherwise it clashes with the app's
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.test.tsbuildinfo"
+  },
+  "include": ["src/**/*.test.ts", "src/**/*.test.tsx"],
+  // Override the exclude inherited from tsconfig.app.json,
+  // which would otherwise exclude the test files themselves
+  "exclude": []
+}

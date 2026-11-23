@@ -1,4 +1,11 @@
 {
   "$schema": "https://inlang.com/schema/inlang-message-format",
-  "dashboard_greeting": "Bonjour {name} 👋"
+  "dashboard_greeting": "Bonjour {name} 👋",
+  "error_not_found": "Élément introuvable.",
+  "error_validation": "Certaines informations ne sont pas valides.",
+  "error_conflict": "Cet élément existe déjà.",
+  "error_invalid_request": "La requête est invalide. Vérifiez les champs et réessayez.",
+  "error_internal": "Une erreur est survenue de notre côté. Réessayez plus tard.",
+  "error_network": "Impossible de joindre le serveur. Vérifiez votre connexion.",
+  "error_unknown": "Une erreur inattendue est survenue."
 }
