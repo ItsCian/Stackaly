@@ -1,0 +1,11 @@
+{
+  "$schema": "https://inlang.com/schema/inlang-message-format",
+  "dashboard_greeting": "Hello {name} 👋",
+  "error_not_found": "Item not found.",
+  "error_validation": "Some information isn't valid.",
+  "error_conflict": "This item already exists.",
+  "error_invalid_request": "The request is invalid. Check the fields and try again.",
+  "error_internal": "Something went wrong on our side. Please try again later.",
+  "error_network": "Can't reach the server. Check your connection.",
+  "error_unknown": "An unexpected error occurred."
+}

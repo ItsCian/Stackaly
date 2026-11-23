@@ -1,0 +1,49 @@
+{
+  // Keep the $schema line that `biome init` generated: it gives
+  // VS Code autocomplete matched to your installed version
+  "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
+  "files": {
+    // "**" = everything, "!" = exclude
+    "includes": ["**", "!dist", "!src/routeTree.gen.ts", "!src/paraglide"]
+  },
+  "formatter": {
+    "enabled": true,
+    "indentStyle": "space", // Biome defaults to tabs; pick one and stick to it
+    "indentWidth": 2
+  },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "preset": "recommended"
+    }
+  },
+  "javascript": {
+    "formatter": {
+      "quoteStyle": "single" // matches the Vite template; default is double
+    }
+  },
+  "css": {
+    "parser": {
+      "tailwindDirectives": true
+    }
+  },
+  "assist": {
+    // Sorts imports: replaces what ESLint/Prettier plugins used to do
+    "actions": {
+      "source": {
+        "organizeImports": "on"
+      }
+    }
+  },
+  "overrides": [
+    {
+      // shadcn's vendored components: the CLI can overwrite them, so
+      // fixing their lint errors by hand would be lost on the next update.
+      // Still formatted, just not linted.
+      "includes": ["src/components/ui/**"],
+      "linter": {
+        "enabled": false
+      }
+    }
+  ]
+}

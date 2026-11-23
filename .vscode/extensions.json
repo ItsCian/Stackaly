@@ -1,6 +1,9 @@
 {
   "recommendations": [
-    "rust-lang.rust-analyzer",  // Rust language support, format, clippy
-    "tamasfe.even-better-toml"  // Syntax and validation for Cargo.toml
+    "rust-lang.rust-analyzer", // Rust language support, format, clippy
+    "tamasfe.even-better-toml", // Syntax and validation for Cargo.toml
+    "biomejs.biome", // Lint, format and import sorting for the front end
+    "bradlc.vscode-tailwindcss",
+    "inlang.vs-code-extension"
   ]
 }

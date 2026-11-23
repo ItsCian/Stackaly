@@ -25,9 +25,17 @@ async fn not_found() -> AppError {
 }
 
 pub fn build_app(state: AppState) -> Router {
-    Router::new()
+    // All API routes, written without the /api prefix
+    let api = Router::new()
         .route("/health", get(health))
-        .fallback(not_found)
         .merge(platform::router())
+        // Unknown URL under /api → JSON NotFound error
+        .fallback(not_found);
+
+    Router::new()
+        // Prefixes every route in `api`: /health → /api/health,
+        // /companies → /api/companies
+        .nest("/api", api)
+        // Gives the state to every route, nested ones included
         .with_state(state)
 }
