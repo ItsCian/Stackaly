@@ -17,6 +17,7 @@ use crate::state::AppState;
 pub const SESSION_COOKIE: &str = "session";
 
 /// POST /auth/login
+///
 /// On success, responds 204 No Content with the session cookie.
 /// The token is only ever sent in the cookie, never in the response body.
 pub async fn login(
@@ -35,4 +36,21 @@ pub async fn login(
         .build();
 
     Ok((jar.add(cookie), StatusCode::NO_CONTENT))
+}
+
+/// POST /auth/logout
+///
+/// Always responds 204 No Content, even without a valid session
+/// (logging out twice is not an error).
+pub async fn logout(
+    State(state): State<AppState>,
+    jar: CookieJar,
+) -> Result<(CookieJar, StatusCode), AppError> {
+    if let Some(cookie) = jar.get(SESSION_COOKIE) {
+        service::logout(&state.db, cookie.value()).await?;
+    }
+
+    let jar = jar.remove(Cookie::build(SESSION_COOKIE).path("/"));
+
+    Ok((jar, StatusCode::NO_CONTENT))
 }

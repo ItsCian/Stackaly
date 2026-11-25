@@ -99,3 +99,15 @@ pub async fn login(db: &DatabaseConnection, input: LoginRequest) -> Result<NewSe
 
     Ok(NewSession { token: raw_token, expires_at })
 }
+
+/// Deletes the session matching this raw token. Does nothing if there is none.
+pub async fn logout(db: &DatabaseConnection, token: &str) -> Result<(), AppError> {
+    let token_hash = token::hash_token(token);
+
+    sessions::Entity::delete_many()
+        .filter(sessions::Column::TokenHash.eq(token_hash.to_vec()))
+        .exec(db)
+        .await?;
+
+    Ok(())
+}

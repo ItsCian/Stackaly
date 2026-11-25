@@ -12,7 +12,7 @@ use crate::state::AppState;
 
 /// Routes mounted under /auth by `build_app`.
 pub fn router() -> Router<AppState> {
-    Router::new().route("/login", post(handlers::login))
+    Router::new().route("/login", post(handlers::login)).route("/logout", post(handlers::logout))
 }
 
 /// Trims surrounding whitespace and lowercases an email, so that
