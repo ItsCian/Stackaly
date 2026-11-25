@@ -3,6 +3,8 @@
 //! Passwords are never stored or logged in plain text: only the PHC string
 //! returned by `hash_password` is saved in `users.password_hash`.
 
+use std::sync::LazyLock;
+
 use argon2::{
     Argon2,
     password_hash::{Error, PasswordHasher, PasswordVerifier, phc::PasswordHash},
@@ -29,6 +31,10 @@ pub fn verify_password(password: &str, stored_hash: &str) -> Result<bool, Error>
         Err(other) => Err(other),
     }
 }
+
+pub static DUMMY_HASH: LazyLock<String> = LazyLock::new(|| {
+    hash_password("dummy-password-for-timing").expect("failed to compute the dummy password hash")
+});
 
 #[cfg(test)]
 mod tests {

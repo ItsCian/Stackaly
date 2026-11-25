@@ -14,6 +14,9 @@ db-up:
 db-down:
     docker compose down
 
+db-shell:
+    docker exec -it stackaly-db-1 sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"'
+
 # ── Migrations ──────────────────────────
 # Apply pending migrations
 migrate:

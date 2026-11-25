@@ -1,0 +1,38 @@
+//! HTTP layer for authentication: extract, call the service, set the cookie.
+
+use axum::{extract::State, http::StatusCode};
+use axum_extra::extract::{
+    CookieJar,
+    cookie::{Cookie, SameSite},
+};
+use time::Duration;
+
+use super::dto::LoginRequest;
+use super::service::{self, SESSION_DURATION_HOURS};
+use crate::errors::AppError;
+use crate::extract::AppJson;
+use crate::state::AppState;
+
+/// Name of the session cookie, shared by login, logout and the auth extractor.
+pub const SESSION_COOKIE: &str = "session";
+
+/// POST /auth/login
+/// On success, responds 204 No Content with the session cookie.
+/// The token is only ever sent in the cookie, never in the response body.
+pub async fn login(
+    State(state): State<AppState>,
+    jar: CookieJar,
+    AppJson(input): AppJson<LoginRequest>,
+) -> Result<(CookieJar, StatusCode), AppError> {
+    let session = service::login(&state.db, input).await?;
+
+    let cookie = Cookie::build((SESSION_COOKIE, session.token))
+        .http_only(true)
+        .secure(true)
+        .same_site(SameSite::Strict)
+        .path("/")
+        .max_age(Duration::hours(SESSION_DURATION_HOURS)) // same lifetime as the session
+        .build();
+
+    Ok((jar.add(cookie), StatusCode::NO_CONTENT))
+}

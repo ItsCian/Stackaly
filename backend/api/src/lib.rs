@@ -30,6 +30,7 @@ pub fn build_app(state: AppState) -> Router {
     let api = Router::new()
         .route("/health", get(health))
         .merge(platform::router())
+        .nest("/auth", auth::router())
         // Unknown URL under /api → JSON NotFound error
         .fallback(not_found);
 
