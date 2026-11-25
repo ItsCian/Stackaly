@@ -43,6 +43,7 @@ impl MigrationTrait for Migration {
                     .col(string("postal_code"))
                     .col(string("city"))
                     .col(string("country"))
+                    .col(string("currency"))
                     .col(timestamp_with_time_zone_null("suspended_at"))
                     .col(timestamp_with_time_zone("created_at").default(Expr::current_timestamp()))
                     .col(timestamp_with_time_zone("updated_at").default(Expr::current_timestamp()))
