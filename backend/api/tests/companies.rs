@@ -384,6 +384,29 @@ async fn delete_twice_returns_not_found() {
     assert_eq!(response.status(), StatusCode::NOT_FOUND);
 }
 
+// ── CSRF ────────────────────────────────────────────────────────────
+
+#[tokio::test]
+async fn cross_site_patch_is_blocked() {
+    let app = app().await;
+    let (created, cookie) = owner_session(&app).await;
+    let id = created["id"].as_str().unwrap();
+
+    // A valid owner session, but the browser says the request comes from another site
+    let request = Request::builder()
+        .method("PATCH")
+        .uri(format!("/api/companies/{id}"))
+        .header(header::COOKIE, &cookie)
+        .header("sec-fetch-site", "cross-site")
+        .header(header::CONTENT_TYPE, "application/json")
+        .body(Body::from(json!({ "city": "Namur" }).to_string()))
+        .unwrap();
+
+    let response = app.router.clone().oneshot(request).await.unwrap();
+    assert_eq!(response.status(), StatusCode::FORBIDDEN);
+    assert_eq!(body_json(response).await["code"], "forbidden");
+}
+
 // ── Other ───────────────────────────────────────────────────────────
 
 #[tokio::test]

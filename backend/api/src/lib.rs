@@ -1,5 +1,6 @@
 pub mod auth;
 pub mod config;
+pub mod csrf;
 pub mod entities;
 pub mod errors;
 pub mod extract;
@@ -32,7 +33,8 @@ pub fn build_app(state: AppState) -> Router {
         .merge(platform::router())
         .nest("/auth", auth::router())
         // Unknown URL under /api → JSON NotFound error
-        .fallback(not_found);
+        .fallback(not_found)
+        .layer(axum::middleware::from_fn(csrf::csrf));
 
     Router::new()
         // Prefixes every route in `api`: /health → /api/health,
