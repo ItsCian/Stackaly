@@ -1,14 +1,14 @@
 //! HTTP layer for authentication: extract, call the service, set the cookie.
 
-use axum::{extract::State, http::StatusCode};
+use axum::{Json, extract::State, http::StatusCode};
 use axum_extra::extract::{
     CookieJar,
     cookie::{Cookie, SameSite},
 };
 use time::Duration;
 
-use super::dto::LoginRequest;
-use super::service::{self, SESSION_DURATION_HOURS};
+use super::dto::{LoginRequest, MeResponse};
+use super::service::{self, AuthUser, SESSION_DURATION_HOURS};
 use crate::errors::AppError;
 use crate::extract::AppJson;
 use crate::state::AppState;
@@ -53,4 +53,17 @@ pub async fn logout(
     let jar = jar.remove(Cookie::build(SESSION_COOKIE).path("/"));
 
     Ok((jar, StatusCode::NO_CONTENT))
+}
+
+/// GET /auth/me
+///
+/// Returns the authenticated caller. No `Result`: if there is no valid
+/// session, the `AuthUser` extractor rejects the request before this runs.
+pub async fn me(auth: AuthUser) -> Json<MeResponse> {
+    let (company_id, role) = match auth.company {
+        Some(company) => (Some(company.id), Some(company.role)),
+        None => (None, None),
+    };
+
+    Json(MeResponse { user_id: auth.user_id, company_id, role })
 }

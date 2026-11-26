@@ -24,6 +24,19 @@ pub struct NewSession {
     pub expires_at: DateTimeWithTimeZone,
 }
 
+/// The company the caller is currently working in, with their role in it.
+pub struct ActiveCompany {
+    pub id: Uuid,
+    pub role: String,
+}
+
+/// The authenticated caller, given to every protected handler.
+pub struct AuthUser {
+    pub user_id: Uuid,
+    pub session_id: Uuid,
+    pub company: Option<ActiveCompany>,
+}
+
 /// Checks the credentials and opens a new session.
 /// Unknown email and wrong password give the same error, in the same time,
 /// so the response never reveals which accounts exist.
@@ -110,4 +123,46 @@ pub async fn logout(db: &DatabaseConnection, token: &str) -> Result<(), AppError
         .await?;
 
     Ok(())
+}
+
+/// Checks a raw session token and returns the authenticated caller.
+/// Fails with Unauthorized if the session is missing, expired or invalidated.
+pub async fn authenticate(db: &DatabaseConnection, token: &str) -> Result<AuthUser, AppError> {
+    let token_hash = token::hash_token(token);
+    let session = sessions::Entity::find()
+        .filter(sessions::Column::TokenHash.eq(token_hash.to_vec()))
+        .one(db)
+        .await?
+        .ok_or(AppError::Unauthorized)?;
+
+    if session.expires_at <= Utc::now() {
+        return Err(AppError::Unauthorized);
+    }
+
+    let user =
+        users::Entity::find_by_id(session.user_id).one(db).await?.ok_or(AppError::Unauthorized)?;
+
+    if user.disabled_at.is_some() {
+        return Err(AppError::Forbidden("This account is disabled".into()));
+    }
+
+    if user.password_changed_at > session.created_at {
+        return Err(AppError::Unauthorized);
+    }
+
+    let company = match session.active_company_id {
+        None => None,
+
+        Some(company_id) => {
+            let membership = memberships::Entity::find_by_id((user.id, company_id)).one(db).await?;
+
+            match membership {
+                Some(m) if m.deactivated_at.is_none() => {
+                    Some(ActiveCompany { id: company_id, role: m.role })
+                }
+                _ => None,
+            }
+        }
+    };
+    Ok(AuthUser { user_id: user.id, session_id: session.id, company })
 }
