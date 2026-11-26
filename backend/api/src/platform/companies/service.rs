@@ -2,22 +2,34 @@
 //! returns Result, so it can be tested without a server.
 
 use chrono::Utc;
-use sea_orm::{ActiveModelTrait, DatabaseConnection, DbErr, EntityTrait, NotSet, Set, SqlErr};
+use sea_orm::{
+    ActiveModelTrait, ConnectionTrait, DatabaseConnection, DbErr, EntityTrait, NotSet, Set, SqlErr,
+};
 use uuid::Uuid;
 
 use super::dto::{CreateCompany, UpdateCompany};
+use super::vat::normalize_vat;
 use crate::entities::companies;
 use crate::errors::AppError;
 
-/// Creates a company. Fails with Conflict if the VAT number already exists.
-pub async fn create(
-    db: &DatabaseConnection,
+/// Creates a company.
+/// Fails with Validation if the VAT number is invalid,
+/// and Conflict if it already exists.
+///
+/// Generic over `ConnectionTrait`: accepts a plain connection
+/// (`&DatabaseConnection`) or a transaction (`&DatabaseTransaction`),
+/// so `register` can create the company inside its own transaction.
+pub async fn create<C: ConnectionTrait>(
+    db: &C,
     input: CreateCompany,
 ) -> Result<companies::Model, AppError> {
+    // Required field: always validate. Done first so we fail fast.
+    let vat_number = normalize_vat(&input.vat_number)?;
+
     let company = companies::ActiveModel {
         id: Set(Uuid::now_v7()),
         legal_name: Set(input.legal_name),
-        vat_number: Set(input.vat_number),
+        vat_number: Set(vat_number), // the normalized form, never the raw input
         street: Set(input.street),
         postal_code: Set(input.postal_code),
         city: Set(input.city),
@@ -47,7 +59,7 @@ pub async fn update(
         company.legal_name = Set(legal_name);
     }
     if let Some(vat_number) = input.vat_number {
-        company.vat_number = Set(vat_number);
+        company.vat_number = Set(normalize_vat(&vat_number)?);
     }
     if let Some(street) = input.street {
         company.street = Set(street);

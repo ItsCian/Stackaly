@@ -41,9 +41,20 @@ async fn app() -> TestApp {
     TestApp { router: build_app(AppState { db: db.clone() }), db }
 }
 
-/// A VAT number no other test uses, so tests can run in parallel.
+/// A random VAT number that passes `normalize_vat`, so tests can run in
+/// parallel without clashing on the UNIQUE constraint.
+///
+/// Must be a VALID Belgian number now that the API checks the format:
+/// "BE" + 8-digit base starting with 0 or 1 + 2-digit mod-97 checksum.
+/// 20 million possible bases: a clash between runs is very unlikely,
+/// but possible if the test database is never reset.
 fn unique_vat() -> String {
-    format!("TEST-{}", Uuid::now_v7())
+    // 8 random bytes from the OS (getrandom is already a dependency).
+    let mut bytes = [0u8; 8];
+    getrandom::fill(&mut bytes).unwrap();
+    let base = u64::from_le_bytes(bytes) % 20_000_000; // 0..=19_999_999
+    let check = 97 - (base % 97);
+    format!("BE{base:08}{check:02}") // :08 keeps the leading zeros
 }
 
 /// A valid create body with the given VAT number.

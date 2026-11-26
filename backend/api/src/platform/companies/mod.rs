@@ -1,8 +1,9 @@
 //! Companies (tenants): sign-up, read, update, suspend.
 
-mod dto; // request/response structs
+pub(crate) mod dto; // request/response structs (auth::register needs CreateCompany)
 mod handlers; // HTTP layer
-mod service; // business logic + DB
+pub(crate) mod service;
+pub(crate) mod vat; // Belgian VAT number validation // business logic + DB (auth::register calls create)
 
 use axum::{
     Router,

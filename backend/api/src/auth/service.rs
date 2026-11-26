@@ -3,8 +3,8 @@
 
 use chrono::{Duration, Utc};
 use sea_orm::{
-    ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, NotSet, QueryFilter,
-    QuerySelect, Set, TransactionTrait, entity::prelude::DateTimeWithTimeZone,
+    ActiveModelTrait, ColumnTrait, ConnectionTrait, DatabaseConnection, EntityTrait, NotSet,
+    QueryFilter, QuerySelect, Set, TransactionTrait, entity::prelude::DateTimeWithTimeZone,
 };
 use secrecy::ExposeSecret;
 use uuid::Uuid;
@@ -102,25 +102,11 @@ pub async fn login(db: &DatabaseConnection, input: LoginRequest) -> Result<NewSe
         _ => None,
     };
 
-    let raw_token = token::generate_token()
-        .map_err(|err| AppError::Internal(format!("token generation failed: {err}")))?;
-    let token_hash = token::hash_token(&raw_token);
-
     let now = Utc::now();
-    let expires_at: DateTimeWithTimeZone = (now + Duration::hours(SESSION_DURATION_HOURS)).into();
 
     let txn = db.begin().await?;
 
-    let session = sessions::ActiveModel {
-        id: Set(Uuid::now_v7()),
-        token_hash: Set(token_hash.to_vec()),
-        user_id: Set(user.id),
-        active_company_id: Set(active_company_id),
-        created_at: NotSet,
-        expires_at: Set(expires_at),
-        last_seen_at: NotSet,
-    };
-    session.insert(&txn).await?;
+    let session = create_session(&txn, user.id, active_company_id).await?;
 
     let mut user: users::ActiveModel = user.into();
     user.last_login_at = Set(Some(now.into()));
@@ -129,6 +115,37 @@ pub async fn login(db: &DatabaseConnection, input: LoginRequest) -> Result<NewSe
     user.update(&txn).await?;
 
     txn.commit().await?;
+
+    Ok(session)
+}
+
+/// Opens a new session for this user: generates a random token, stores
+/// only its SHA-256 hash, and returns the raw token for the cookie.
+///
+/// Shared by `login` and `register`. Generic over `ConnectionTrait` so the
+/// caller decides whether it runs inside a transaction.
+pub async fn create_session<C: ConnectionTrait>(
+    db: &C,
+    user_id: Uuid,
+    active_company_id: Option<Uuid>,
+) -> Result<NewSession, AppError> {
+    let raw_token = token::generate_token()
+        .map_err(|err| AppError::Internal(format!("token generation failed: {err}")))?;
+    let token_hash = token::hash_token(&raw_token); // only the hash is stored
+
+    let expires_at: DateTimeWithTimeZone =
+        (Utc::now() + Duration::hours(SESSION_DURATION_HOURS)).into();
+
+    let session = sessions::ActiveModel {
+        id: Set(Uuid::now_v7()),
+        token_hash: Set(token_hash.to_vec()),
+        user_id: Set(user_id),
+        active_company_id: Set(active_company_id),
+        created_at: NotSet, // DB default now()
+        expires_at: Set(expires_at),
+        last_seen_at: NotSet, // DB default now()
+    };
+    session.insert(db).await?;
 
     Ok(NewSession { token: raw_token, expires_at })
 }
