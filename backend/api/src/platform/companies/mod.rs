@@ -14,6 +14,6 @@ use crate::state::AppState;
 /// Routes mounted under /companies by platform::router().
 pub fn router() -> Router<AppState> {
     Router::new()
-        .route("/", post(handlers::create).get(handlers::list))
+        .route("/", post(handlers::create))
         .route("/{id}", get(handlers::get_by_id).patch(handlers::update).delete(handlers::delete))
 }

@@ -23,6 +23,7 @@ pub async fn create(
         city: Set(input.city),
         country: Set(input.country),
         suspended_at: NotSet,
+        closed_at: NotSet,
         created_at: NotSet,
         updated_at: NotSet,
     };
@@ -67,24 +68,6 @@ pub async fn update(
     Ok(company)
 }
 
-/// Deletes a company. Fails with NotFound if it doesn't exist.
-pub async fn delete(db: &DatabaseConnection, id: Uuid) -> Result<(), AppError> {
-    let result = companies::Entity::delete_by_id(id).exec(db).await?;
-
-    if result.rows_affected == 0 {
-        return Err(AppError::NotFound);
-    }
-
-    Ok(())
-}
-
-/// Returns all companies.
-pub async fn list(db: &DatabaseConnection) -> Result<Vec<companies::Model>, AppError> {
-    let companies = companies::Entity::find().all(db).await?;
-
-    Ok(companies)
-}
-
 /// Returns one company by id. Fails with NotFound if it doesn't exist.
 pub async fn get_by_id(db: &DatabaseConnection, id: Uuid) -> Result<companies::Model, AppError> {
     let company = companies::Entity::find_by_id(id).one(db).await?;
@@ -100,4 +83,15 @@ fn vat_conflict(err: DbErr) -> AppError {
         }
         _ => AppError::from(err),
     }
+}
+
+/// Closes a company: sets closed_at instead of deleting the row,
+/// so the history is kept and the closure can be undone.
+pub async fn close(db: &DatabaseConnection, id: Uuid) -> Result<(), AppError> {
+    let company = get_by_id(db, id).await?;
+    let mut company: companies::ActiveModel = company.into();
+    company.closed_at = Set(Some(Utc::now().into()));
+    company.updated_at = Set(Utc::now().into());
+    company.update(db).await?;
+    Ok(())
 }

@@ -11,7 +11,7 @@ use uuid::Uuid;
 
 use crate::{
     auth::{dto::LoginRequest, normalize_email, token},
-    entities::{memberships, sessions, users},
+    entities::{companies, memberships, sessions, users},
     errors::AppError,
 };
 
@@ -35,6 +35,26 @@ pub struct AuthUser {
     pub user_id: Uuid,
     pub session_id: Uuid,
     pub company: Option<ActiveCompany>,
+}
+
+impl AuthUser {
+    /// Returns the caller's active company if it is the one requested.
+    /// Fails with NotFound otherwise, so outsiders can't tell it exists.
+    pub fn company(&self, id: Uuid) -> Result<&ActiveCompany, AppError> {
+        match self.company.as_ref() {
+            Some(c) if c.id == id => Ok(c),
+            _ => Err(AppError::NotFound),
+        }
+    }
+
+    pub fn owned_company(&self, id: Uuid) -> Result<&ActiveCompany, AppError> {
+        let company = self.company(id)?;
+        if company.role != "owner" {
+            return Err(AppError::Forbidden("Only the owner can do this".into()));
+        }
+
+        Ok(company)
+    }
 }
 
 /// Checks the credentials and opens a new session.
@@ -155,9 +175,14 @@ pub async fn authenticate(db: &DatabaseConnection, token: &str) -> Result<AuthUs
 
         Some(company_id) => {
             let membership = memberships::Entity::find_by_id((user.id, company_id)).one(db).await?;
+            let company = companies::Entity::find_by_id(company_id).one(db).await?;
 
-            match membership {
-                Some(m) if m.deactivated_at.is_none() => {
+            match (membership, company) {
+                (Some(m), Some(c))
+                    if m.deactivated_at.is_none()
+                        && c.closed_at.is_none()
+                        && c.suspended_at.is_none() =>
+                {
                     Some(ActiveCompany { id: company_id, role: m.role })
                 }
                 _ => None,
