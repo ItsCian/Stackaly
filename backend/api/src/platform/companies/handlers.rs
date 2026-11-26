@@ -5,6 +5,7 @@ use uuid::Uuid;
 
 use super::dto::{CreateCompany, UpdateCompany};
 use super::service;
+use crate::auth::service::AuthUser;
 use crate::entities::companies;
 use crate::errors::AppError;
 use crate::extract::{AppJson, AppPath};
@@ -20,40 +21,42 @@ pub async fn create(
     Ok((StatusCode::CREATED, Json(company)))
 }
 
-/// GET /companies
-pub async fn list(State(state): State<AppState>) -> Result<Json<Vec<companies::Model>>, AppError> {
-    let company = service::list(&state.db).await?;
-
-    Ok(Json(company))
-}
-
-/// GET /companies/{id}
+/// GET /companies/{id} (members of this company only)
 pub async fn get_by_id(
+    auth: AuthUser,
     State(state): State<AppState>,
-    AppPath(id): AppPath<Uuid>, // our extractor: "abc" → 400 in our JSON format
+    AppPath(id): AppPath<Uuid>,
 ) -> Result<Json<companies::Model>, AppError> {
+    auth.company(id)?;
+
     let company = service::get_by_id(&state.db, id).await?;
 
     Ok(Json(company))
 }
 
-/// PATCH /companies/{id}
+/// PATCH /companies/{id} (owner only)
 pub async fn update(
+    auth: AuthUser,
     State(state): State<AppState>,
     AppPath(id): AppPath<Uuid>,
     AppJson(input): AppJson<UpdateCompany>,
 ) -> Result<Json<companies::Model>, AppError> {
+    auth.owned_company(id)?;
+
     let company = service::update(&state.db, id, input).await?;
 
     Ok(Json(company))
 }
 
-/// DELETE /companies/{id}
+/// DELETE /companies/{id} (owner only; closes the company, nothing is erased)
 pub async fn delete(
+    auth: AuthUser,
     State(state): State<AppState>,
     AppPath(id): AppPath<Uuid>,
 ) -> Result<StatusCode, AppError> {
-    service::delete(&state.db, id).await?;
+    auth.owned_company(id)?;
+
+    service::close(&state.db, id).await?;
 
     Ok(StatusCode::NO_CONTENT)
 }

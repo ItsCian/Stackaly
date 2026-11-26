@@ -14,6 +14,8 @@ async fn main() {
         .await
         .expect("Failed to connect to database");
 
+    std::sync::LazyLock::force(&api::auth::password::DUMMY_HASH);
+
     let state = AppState { db };
 
     let listener = tokio::net::TcpListener::bind(format!("{}:{}", config.host, config.port))

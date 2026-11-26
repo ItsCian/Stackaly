@@ -3,3 +3,6 @@
 pub mod prelude;
 
 pub mod companies;
+pub mod memberships;
+pub mod sessions;
+pub mod users;
