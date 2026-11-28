@@ -3,14 +3,17 @@
 
 use chrono::{Duration, Utc};
 use sea_orm::{
-    ActiveModelTrait, ColumnTrait, ConnectionTrait, DatabaseConnection, EntityTrait, NotSet,
-    QueryFilter, QuerySelect, Set, TransactionTrait, entity::prelude::DateTimeWithTimeZone,
+    ActiveModelTrait, ColumnTrait, ConnectionTrait, DatabaseConnection, DbErr, EntityTrait, NotSet,
+    QueryFilter, QuerySelect, Set, SqlErr, TransactionTrait, entity::prelude::DateTimeWithTimeZone,
 };
 use secrecy::ExposeSecret;
 use uuid::Uuid;
 
 use crate::{
-    auth::{dto::LoginRequest, normalize_email, token},
+    auth::{
+        dto::{LoginRequest, RegisterRequest},
+        normalize_email, token,
+    },
     entities::{companies, memberships, sessions, users},
     errors::AppError,
 };
@@ -117,6 +120,106 @@ pub async fn login(db: &DatabaseConnection, input: LoginRequest) -> Result<NewSe
     txn.commit().await?;
 
     Ok(session)
+}
+
+/// Minimum password length, in characters (NIST SP 800-63B: at least 8).
+pub const MIN_PASSWORD_CHARS: usize = 10;
+
+/// Registers a new company with its owner, and logs the owner in (US-01).
+/// All or nothing: if any insert fails, nothing is kept.
+///
+/// Fails with Validation (bad email, short password, invalid VAT number)
+/// or Conflict (email or VAT number already in use).
+pub async fn register(
+    db: &DatabaseConnection,
+    input: RegisterRequest,
+) -> Result<NewSession, AppError> {
+    // 1. Validate BEFORE any DB work (cheap checks first)
+    let email = normalize_email(&input.email);
+    // Minimal sanity check only: the real proof an address works is
+    // email verification (users.email_verified_at), not a regex.
+    if !email.contains('@') || email.len() > 254 {
+        return Err(AppError::Validation("Invalid email address".into()));
+    }
+
+    // chars().count(), not len(): len() counts BYTES, so "ééééé" would be 10
+    if input.password.expose_secret().chars().count() < MIN_PASSWORD_CHARS {
+        return Err(AppError::Validation(format!(
+            "The password must be at least {MIN_PASSWORD_CHARS} characters"
+        )));
+    }
+
+    // 2. Hash OUTSIDE the transaction: Argon2 is slow on purpose (~100ms),
+    //    and we don't want a DB transaction (and its locks) held open meanwhile.
+    //    spawn_blocking: CPU-heavy work must not block the async runtime.
+    let password = input.password; // moves only this field out of `input`
+    let password_hash = tokio::task::spawn_blocking(move || {
+        super::password::hash_password(password.expose_secret())
+    })
+    .await
+    .map_err(|err| AppError::Internal(format!("password hash task failed: {err}")))? // task panicked
+    .map_err(|err| AppError::Internal(format!("password hashing failed: {err}")))?; // argon2 error
+
+    // 3. All inserts in ONE transaction. Any `?` below returns early:
+    //    `txn` is then dropped without commit -> automatic rollback.
+    let txn = db.begin().await?;
+
+    // Company first: memberships.company_id references it.
+    // Validates + normalizes the VAT number, Conflict if already used.
+    let company = crate::platform::companies::service::create(&txn, input.company).await?;
+
+    // User second: memberships.user_id references it.
+    let user = users::ActiveModel {
+        id: Set(Uuid::now_v7()),
+        email: Set(email),
+        password_hash: Set(password_hash),
+        first_name: Set(input.first_name.trim().to_owned()),
+        last_name: Set(input.last_name.trim().to_owned()),
+        // everything else: DB defaults (not verified, not locked, never logged in...)
+        disabled_at: NotSet,
+        email_verified_at: NotSet,
+        must_change_password: NotSet,
+        password_changed_at: NotSet,
+        failed_login_count: NotSet,
+        locked_until: NotSet,
+        last_login_at: NotSet,
+        created_at: NotSet,
+        updated_at: NotSet,
+    }
+    .insert(&txn)
+    .await
+    .map_err(email_conflict)?;
+
+    // Then the link between them: this user OWNS this company.
+    memberships::ActiveModel {
+        user_id: Set(user.id),
+        company_id: Set(company.id),
+        role: Set("owner".into()),
+        deactivated_at: NotSet,
+        added_by: Set(None), // nobody added the owner: they registered themselves
+        created_at: NotSet,
+    }
+    .insert(&txn)
+    .await?;
+
+    // Log the owner in straight away, already inside their new company.
+    let session = create_session(&txn, user.id, Some(company.id)).await?;
+
+    txn.commit().await?;
+
+    Ok(session)
+}
+
+/// Turns a duplicate email into a Conflict error (UNIQUE on users.email).
+/// The DB constraint is the real guard: a SELECT-then-INSERT check would
+/// let two simultaneous sign-ups with the same email both pass.
+fn email_conflict(err: DbErr) -> AppError {
+    match err.sql_err() {
+        Some(SqlErr::UniqueConstraintViolation(_)) => {
+            AppError::Conflict("This email address is already in use".into())
+        }
+        _ => AppError::from(err),
+    }
 }
 
 /// Opens a new session for this user: generates a random token, stores

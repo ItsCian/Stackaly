@@ -7,8 +7,8 @@ use axum_extra::extract::{
 };
 use time::Duration;
 
-use super::dto::{LoginRequest, MeResponse};
-use super::service::{self, AuthUser, SESSION_DURATION_HOURS};
+use super::dto::{LoginRequest, MeResponse, RegisterRequest};
+use super::service::{self, AuthUser, NewSession, SESSION_DURATION_HOURS};
 use crate::errors::AppError;
 use crate::extract::AppJson;
 use crate::state::AppState;
@@ -27,15 +27,34 @@ pub async fn login(
 ) -> Result<(CookieJar, StatusCode), AppError> {
     let session = service::login(&state.db, input).await?;
 
-    let cookie = Cookie::build((SESSION_COOKIE, session.token))
-        .http_only(true)
-        .secure(true)
-        .same_site(SameSite::Strict)
+    Ok((jar.add(session_cookie(session)), StatusCode::NO_CONTENT))
+}
+
+/// POST /auth/register (US-01)
+///
+/// Creates the company, its owner and logs the owner in.
+/// On success, responds 201 Created with the session cookie, no body:
+/// the front end then calls GET /auth/me to get the company id.
+pub async fn register(
+    State(state): State<AppState>,
+    jar: CookieJar,
+    AppJson(input): AppJson<RegisterRequest>,
+) -> Result<(CookieJar, StatusCode), AppError> {
+    let session = service::register(&state.db, input).await?;
+
+    Ok((jar.add(session_cookie(session)), StatusCode::CREATED))
+}
+
+/// Builds the session cookie. Shared by login and register so both
+/// always set exactly the same security flags.
+fn session_cookie(session: NewSession) -> Cookie<'static> {
+    Cookie::build((SESSION_COOKIE, session.token))
+        .http_only(true) // JavaScript can't read it (XSS can't steal it)
+        .secure(true) // HTTPS only (browsers allow http://localhost)
+        .same_site(SameSite::Strict) // never sent on cross-site requests
         .path("/")
         .max_age(Duration::hours(SESSION_DURATION_HOURS)) // same lifetime as the session
-        .build();
-
-    Ok((jar.add(cookie), StatusCode::NO_CONTENT))
+        .build()
 }
 
 /// POST /auth/logout
